@@ -1,17 +1,44 @@
-#!/usr/bin/python
-import mechanize , pexpect  , sys ,signal
-def signal_handler(signal, frame):
-    print "\n[-] Exiting"
-    exit()
-signal.signal(signal.SIGINT, signal_handler)
+#!/usr/bin/env python
+import pexpect
+import mechanize
+import sys 
 from bs4 import BeautifulSoup
-usage = ''' 
-[+] usage : python vpn.py 'cert file' 
-'''
-if len(sys.argv) < 2 : 
-	print usage
-	exit(1)
-print "[*] Starting ... " 
+import argparse
+import signal 
+import os
+import time
+from subprocess import call
+
+## BEGIN
+
+verbose = 0
+
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+# signal handler to exit gracefully 
+def receive_signal(signal, frame):
+	print ""
+	print bcolors.OKGREEN + '[+]Exiting' + bcolors.OKGREEN
+	call(["pkill","openvpn"])
+	exit()
+# register the handler
+signal.signal(signal.SIGINT, receive_signal)
+
+# cli args
+parser = argparse.ArgumentParser(description="vpn.py certfile.ovpn")
+parser.add_argument('-c', type=str, help="OpenVpn Certificate file", required=True)
+parser.add_argument('--verbose',help="Verbose output", action="store_true")
+
+# grab vpn password from vpnbook website
 def password() : 
 	br = mechanize.Browser()
 	br.open("http://www.vpnbook.com/freevpn")
@@ -21,22 +48,31 @@ def password() :
 	passw = link[-1].text
 	password = str(passw.split(":")[1][1:])
 	return  password
-try :
-	vpn = pexpect.spawn("openvpn vpnbook-euro1-tcp80.ovpn")
-	vpn.timeout=300000000000
-	vpn.expect("Username:")
-	vpn.sendline("vpnbook")
-	vpn.expect("Password:")
-	a = password()
-	vpn.sendline(a)
-	print "[+] Password : "+a
-	while 1 :
-		if "Completed" in vpn.next() : break  
-		else : print  vpn.next()  
+
+cmdargs = parser.parse_args()
+#verbose = cmdargs.v
+confFile = cmdargs.c
+
+# run openvpn and connect
+print bcolors.OKGREEN + "[+] Starting" + bcolors.OKGREEN
+vpn = pexpect.spawn("openvpn " + confFile)
+vpn.timeout=300000000000
+vpn.expect("Username:")
+vpn.sendline("vpnbook")
+vpn.expect("Password:")
+a = password()
+vpn.sendline(a)
+while 1 :
+	if cmdargs.verbose:
+		print  bcolors.OKBLUE + vpn.readline() + bcolors.OKBLUE
+	
+	if "Completed" in vpn.readline() :
+		print bcolors.OKGREEN + "[+] Connected" + bcolors.OKGREEN
+		break  
+
+while 1 :
+	pass
 
 
-	while 1 : 
-		pass
-except : 
-	print "[-] Something went wrong :/ "
-	sys.exit(1)
+
+## END
