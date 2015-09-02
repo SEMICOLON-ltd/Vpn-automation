@@ -61,6 +61,7 @@ vpn.expect("Username:")
 vpn.sendline("vpnbook")
 vpn.expect("Password:")
 a = password()
+print "[+] Password is : "+str(a)
 vpn.sendline(a)
 while 1 :
 	if cmdargs.verbose:
