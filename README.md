@@ -9,5 +9,5 @@ prerequisites :
 UPDATE : for better experience : 
    1. copy the .bash_aliases file to your home direcotory.
    2. restart your terminal. 
-   3. type vpn then Enter.
+   3. type vpnca ( US )  or vpnea ( Europe ) then Enter.
    4. Enjoy 8).
